@@ -21,7 +21,7 @@
                   <input type="text" class="form-control" v-model="nuevaNota.Texto" placeholder="Texto">
                 </div>
                 <div class="form-group">
-                  <input type="file" class="form-control-file" @change="subirNota" accept="*" placeholder="Seleccionar archivo">
+                  <input type="file" class="form-control-file" @change="subirNota" placeholder="Seleccionar archivo">
                 </div>
                  <div class="form-group">
                   <button type="submit" class="btn btn-primary">Añadir</button>
@@ -44,7 +44,7 @@
                   <th>Archivo</th>
                   <td></td>
                 </tr>
-                <tr v-for="(nota, index) in listaNotas" v-bind:key="index">
+                <tr v-for="nota in listaNotas" v-bind:key="nota.Texto">
                   <td>{{nota.Autor}}</td>
                   <td>{{nota.Texto}}</td>
                   <td><a :href="nota.Archivo['URL']">{{nota.Archivo["Nombre"]}}</a></td>
@@ -77,7 +77,7 @@ import { db } from "../db.js";
     data () {
       return {
         listaNotas:[],
-        nuevoArchivo:null,
+        archivo:null,
         nuevaNota:{
           Autor:'',
           Texto:'',
@@ -93,17 +93,20 @@ import { db } from "../db.js";
       
     },
     methods: {
+      subirNota: function(event){
+        this.archivo=event.target.files[0]
+      },
       addNota: function () {
 
-        firebase.storage().ref(`${this.nuevoArchivo.name}`).put(this.nuevoArchivo);
-        firebase.storage().ref().child(this.nuevoArchivo.name).getDownloadURL().then(
+        firebase.storage().ref(this.archivo.name).put(this.archivo);
+        firebase.storage().ref().child(this.archivo.name).getDownloadURL().then(
           url=>{
-            this.nuevoArchivo.url=url
+            this.archivo.url=url
              db.collection('listaNotas').add({
                Texto: this.nuevaNota.Texto,
                Autor: firebase.auth().currentUser.email ,
                Archivo:{
-                 Nombre: this.nuevoArchivo.name,
+                 Nombre: this.archivo.name,
                  URL: url
                }
               });
@@ -119,16 +122,14 @@ import { db } from "../db.js";
         db.collection('listaNotas').doc(id).delete()
       },
       logout: function () {
-      firebase.auth().signOut().then(() => {
-        this.$router.replace('login')
-      }).catch((e)=>{
-        alert(e.nessage)
-      })
-      },
-
-      subirNota:function(e){
-        this.nuevoArchivo=e.target.files[0]
+        firebase.auth().signOut().then(() => {
+          this.$router.replace('login')
+        }).catch((e)=>{
+          alert(e.nessage)
+        })
       }
+
+      
     },
     computed: {
        usuarioConectado:function(){
